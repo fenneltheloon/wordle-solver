@@ -1,27 +1,24 @@
 # Benchmark file
-# We want to run an instance of the wordle solver on "all possible wordle sols"
-#
-# Needs to call the program using
+# Run an instance of the wordle solver on all possible wordle sols
 from game import Game
 
-# and we want to be using
+from itertools import repeat
 from multiprocessing import Pool
 from utils import get_project_root
 import numpy
 import gc
 from tqdm import tqdm
 from collections import defaultdict
-from threading import Lock
 from math import inf
 from scipy.optimize import OptimizeResult, minimize
-import copy
 
 GRANULARITY = 5
 
 
-def run_game(weights, sol_word, wordlist=None, first_word=None):
+def run_game(args):
+  weights, sol_word, wordlist, first_word = args
   game = Game(weights=weights, words=wordlist, first_word=first_word)
-  sol_len = game.play_benchmark_best_weighted(sol_word)
+  sol_len = game.play_benchmark_elim_letters(sol_word)
   del game
   return [sol_word, sol_len, weights]
 
@@ -35,8 +32,7 @@ def result_call(result, scores, lock, progbar=None):
       progbar.update(1)
 
 
-def run_wordlist(lock, weights, progbar=None):
-  scores = defaultdict(int)
+def run_wordlist(weights, progbar=None):
   with open(get_project_root() / "corpus.txt") as verif_file:
     verif = [a.strip().split() for a in verif_file.readlines()]
 
@@ -49,28 +45,45 @@ def run_wordlist(lock, weights, progbar=None):
   g.eliminate_letters()
   first_word = g.eliminate_letters_scores[-1][0]
   del g
-  pool = Pool()
-  for word in wordlist:
-    pool.apply_async(
-      run_game,
-      args=[
-        weights,
-        word,
-      ],
-      kwds={"wordlist": words, "first_word": first_word},
-      callback=lambda a: result_call(a, scores, lock, progbar),
+  wordlist_len = len(wordlist)
+  input_iter = zip(
+    repeat(weights, wordlist_len),
+    wordlist,
+    repeat(words, wordlist_len),
+    repeat(first_word, wordlist_len),
+  )
+  total = 0
+  with Pool() as p:
+    progbar = tqdm(
+      p.imap_unordered(
+        run_game,
+        input_iter,
+      )
     )
-  pool.close()
-  pool.join()
+    for result in progbar:
+      progbar.write(str(result))
+      total += result[1]
+  avg_solve = total / len(wordlist)
+  # for word in wordlist:
+  #   pool.apply_async(
+  #     run_game,
+  #     args=[
+  #       weights,
+  #       word,
+  #     ],
+  #     kwds={"wordlist": words, "first_word": first_word},
+  #     callback=lambda a: result_call(a, scores, lock, progbar),
+  #   )
+  # pool.close()
+  # pool.join()
   # breakpoint()
-  avg_solve = scores[str(weights)] / len(wordlist)
+  # avg_solve = scores[str(weights)] / len(wordlist)
   if progbar:
     progbar.write(str(weights))
     progbar.write(str(avg_solve))
   else:
     print(weights)
     print(avg_solve)
-  gc.collect()
   return avg_solve, weights
 
 
@@ -82,7 +95,7 @@ def param_space_search():
   word_weight_values = numpy.linspace(-1.5, 0, GRANULARITY, endpoint=True)
   progbar = tqdm(total=GRANULARITY**4 * len(wordlist))
   minimum = (inf, None)
-  lock = Lock()
+  # lock = Lock()
   scores = defaultdict(int)
 
   for black_w in black_weight_values:
@@ -108,12 +121,10 @@ def grad_desc_callback(intermediate_result: OptimizeResult):
 
 def grad_desc():
   init_weights = [0, 0, 0, 0]
-  lock = Lock()
+  # lock = Lock()
   ret: OptimizeResult = minimize(
     lambda x: run_wordlist(
-      lock,
       weights={"black": x[0], "green": x[1], "yellow": x[2], "word": x[3]},
-      progbar=tqdm(total=len(wordlist), desc=f"{x}"),
     )[0],
     init_weights,
     callback=grad_desc_callback,
@@ -123,10 +134,11 @@ def grad_desc():
   print(ret.fun, ret.x)
 
 
-with open(get_project_root() / "all_wordle_answers_2025_08_09.txt") as input:
-  input = input.readlines()
-  wordlist = [i.strip().lower() for i in input]
-grad_desc()
+if __name__ == "__main__":
+  with open(get_project_root() / "all_wordle_answers_2025_08_09.txt") as input:
+    input = input.readlines()
+    wordlist = [i.strip().lower() for i in input]
+  grad_desc()
 # lock = Lock()
 # weights = {"black": 0, "green": 0, "yellow": 0, "word": 0}
 # print(run_wordlist(lock, weights))

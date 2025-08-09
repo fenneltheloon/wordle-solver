@@ -24,16 +24,21 @@ def single_denylist(checklist, denylist):
   return True
 
 
-with open("/usr/share/dict/american-english", "r") as dictionary:
-  dictionary = dictionary.readlines()
-
-dictionary = [i.strip().lower() for i in dictionary]
-
 pos_lists = defaultdict(set)
 verif_list = set()
 final_list = []
 bad_tags = ["NNS", "NNPS", "NNP", "VBD", "VBN"]
 proper_noun_tags = ["NNPS", "NNP"]
+
+
+with open("/usr/share/dict/american-english", "r") as dictionary:
+  dictionary = [i.strip().lower() for i in dictionary.readlines()]
+
+with open(
+  get_project_root() / "all_wordle_answers_2025_08_09.txt"
+) as wordle_list_file_descriptor:
+  verif_list.update([word.strip().lower() for word in wordle_list_file_descriptor])
+
 
 for file in webtext.fileids():
   words = webtext.words(file)
@@ -67,7 +72,7 @@ for word, tags in pos_lists.items():
     continue
   # Looking for words that end in "S", "ES", "ED"
   # Remove regular plurals and past tenses
-  if (word[-1] == "s" or word[-2:] == "ed") and single_denylist(tags, bad_tags):
+  if (word[-1] == "s" or word[-2:] == "ed") and only_denylist(tags, bad_tags):
     continue
   verif_list.add(word)
 

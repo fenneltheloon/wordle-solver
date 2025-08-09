@@ -300,11 +300,12 @@ class Game:
           del self.words[word]
           continue
       if len(self.words) < 1:
-        print(given_word + " did not work: " + self.guessed_words)
+        print(given_word + " did not work: " + str(self.guessed_words))
         return None
       if len(self.words) == 1:
         return len(self.guessed_words) + 1
 
+  # TODO: This is currently not playing wordle correctly.
   def play_benchmark_elim_letters(self, given_word):
     NUM_TO_SOLVE = 6
     # breakpoint()
@@ -352,7 +353,7 @@ class Game:
           del self.words[word]
           continue
       if len(self.words) < 1:
-        print(given_word + " did not work: " + self.guessed_words)
+        print(given_word + " did not work: " + str(self.guessed_words))
         return None
       if len(self.words) == 1:
         return len(self.guessed_words) + 1
