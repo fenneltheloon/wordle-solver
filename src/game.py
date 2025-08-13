@@ -1,6 +1,7 @@
 from numpy import random
 import sys
 import re
+from collections import defaultdict
 
 from utils import get_project_root
 
@@ -268,12 +269,17 @@ class Game:
   def play_benchmark_best_weighted(self, given_word):
     while True:
       self.sort()
+      self.colors = defaultdict(int)
+      self.green_letters = [""] * 5
+      self.black_letters = set()
       if self.word_scores[-1][0] == given_word:
         return len(self.guessed_words) + 1
-      self.guessed_words.append(self.word_scores[-1][0])
+      guessed_word = self.word_scores[-1][0]
+      self.guessed_words.append(guessed_word)
+      print(f"Guessed word {len(self.guessed_words)}: {guessed_word}")
       yellow_letters = []
       given_word_array = [i for i in given_word]
-      for position, letter in enumerate(self.word_scores[-1][0]):
+      for position, letter in enumerate(guessed_word):
         # Figure out what color it's supposed to be
         # Green
         if letter == given_word_array[position]:
@@ -281,7 +287,10 @@ class Game:
           self.colors["green"] += 1
           given_word_array[position] = " "
           continue
-      for position, letter in enumerate(self.word_scores[-1][0]):
+      for position, letter in enumerate(guessed_word):
+        # Catch the greens
+        if self.green_letters[position] != "":
+          continue
         # Yellow
         if letter in given_word_array:
           yellow_letters.append((letter, position))
@@ -291,6 +300,10 @@ class Game:
         else:
           self.black_letters.add(letter)
           self.colors["black"] += 1
+      print(f"Green: {self.green_letters}")
+      print(f"Given word array: {given_word_array}")
+      print(f"Yellow: {yellow_letters}")
+      print(f"Black: {self.black_letters}")
       # Remove words from list
       for word in self.words.copy():
         if word in self.guessed_words:
@@ -299,31 +312,35 @@ class Game:
         if not self.verif(yellow_letters, word):
           del self.words[word]
           continue
+      print(self.words)
       if len(self.words) < 1:
         print(given_word + " did not work: " + str(self.guessed_words))
         return None
       if len(self.words) == 1:
         return len(self.guessed_words) + 1
 
-  # TODO: This is currently not playing wordle correctly.
   def play_benchmark_elim_letters(self, given_word):
-    NUM_TO_SOLVE = 6
+    USE_ELIM_ROUNDS = 2
     # breakpoint()
     while True:
+      self.colors = defaultdict(int)
+      self.green_letters = [""] * 5
+      self.black_letters = set()
+      use_weight_list = len(self.guessed_words) >= USE_ELIM_ROUNDS
       if len(self.guessed_words) == 0 and self.first_word is not None:
         guessed_word = self.first_word
       else:
-        use_weight_list = len(self.words) == 1
+        # print(f"use-weight: {use_weight_list}")
         self.sort()
         if not use_weight_list:
-          self.eliminate_letters()
-        if self.word_scores[-1][0] == given_word and use_weight_list:
-          return len(self.guessed_words) + 1
-        if use_weight_list:
           guessed_word = self.word_scores[-1][0]
         else:
+          self.eliminate_letters()
           guessed_word = self.eliminate_letters_scores[-1][0]
+      if guessed_word == given_word:
+        return len(self.guessed_words) + 1
       self.guessed_words.append(guessed_word)
+      # print(guessed_word)
       yellow_letters = []
       given_word_array = [i for i in given_word]
       for position, letter in enumerate(guessed_word):
@@ -333,8 +350,10 @@ class Game:
           self.green_letters[position] = letter
           self.colors["green"] += 1
           given_word_array[position] = " "
-          continue
       for position, letter in enumerate(guessed_word):
+        # Catch the greens
+        if self.green_letters[position] != "":
+          continue
         # Yellow
         if letter in given_word_array:
           yellow_letters.append((letter, position))
@@ -344,6 +363,10 @@ class Game:
         else:
           self.black_letters.add(letter)
           self.colors["black"] += 1
+      # print(f"Green: {self.green_letters}")
+      # print(f"Given word array: {given_word_array}")
+      # print(f"Yellow: {yellow_letters}")
+      # print(f"Black: {self.black_letters}")
       # Remove words from list
       for word in self.words.copy():
         if word in self.guessed_words:
@@ -352,6 +375,7 @@ class Game:
         if not self.verif(yellow_letters, word):
           del self.words[word]
           continue
+      # print(self.words)
       if len(self.words) < 1:
         print(given_word + " did not work: " + str(self.guessed_words))
         return None
