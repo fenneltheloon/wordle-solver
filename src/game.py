@@ -276,7 +276,7 @@ class Game:
         return len(self.guessed_words) + 1
       guessed_word = self.word_scores[-1][0]
       self.guessed_words.append(guessed_word)
-      print(f"Guessed word {len(self.guessed_words)}: {guessed_word}")
+      # print(f"Guessed word {len(self.guessed_words)}: {guessed_word}")
       yellow_letters = []
       given_word_array = [i for i in given_word]
       for position, letter in enumerate(guessed_word):
@@ -300,10 +300,10 @@ class Game:
         else:
           self.black_letters.add(letter)
           self.colors["black"] += 1
-      print(f"Green: {self.green_letters}")
-      print(f"Given word array: {given_word_array}")
-      print(f"Yellow: {yellow_letters}")
-      print(f"Black: {self.black_letters}")
+      # print(f"Green: {self.green_letters}")
+      # print(f"Given word array: {given_word_array}")
+      # print(f"Yellow: {yellow_letters}")
+      # print(f"Black: {self.black_letters}")
       # Remove words from list
       for word in self.words.copy():
         if word in self.guessed_words:
@@ -312,7 +312,7 @@ class Game:
         if not self.verif(yellow_letters, word):
           del self.words[word]
           continue
-      print(self.words)
+      # print(self.words)
       if len(self.words) < 1:
         print(given_word + " did not work: " + str(self.guessed_words))
         return None

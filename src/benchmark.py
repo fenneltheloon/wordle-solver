@@ -122,12 +122,7 @@ def grad_desc_callback(intermediate_result: OptimizeResult):
 
 
 def grad_desc():
-  init_weights = [
-    4.950368945938928,
-    2.1625415028158764,
-    1.420023668400915,
-    -2.745717732166203,
-  ]
+  init_weights = [5.22639492, 2.12096432, 1.40157567, -2.82829539]
   # lock = Lock()
   ret: OptimizeResult = minimize(
     lambda x: run_wordlist(
@@ -135,23 +130,24 @@ def grad_desc():
     )[0],
     init_weights,
     callback=grad_desc_callback,
-    options={"disp": True, "gtol": 1e-6, "xrtol": 1e-5},
+    method="nelder-mead",
+    options={"disp": True, "adaptive": True, "fatol": 0},
   )
   print(ret.fun, ret.x)
 
 
 if __name__ == "__main__":
-  with open(get_project_root() / "all_wordle_answers_2025_08_11.txt") as input:
+  with open(get_project_root() / "all_wordle_answers_2025_08_13.txt") as input:
     input = input.readlines()
     wordlist = [i.strip().lower() for i in input]
-  # grad_desc()
+  grad_desc()
   # lock = Lock()
-  weights = {
-    "black": 4.950368945938928,
-    "green": 2.1625415028158764,
-    "yellow": 1.420023668400915,
-    "word": -2.745717732166203,
-  }
+  # weights = {
+  #   "black": 4.950368945938928,
+  #   "green": 2.1625415028158764,
+  #   "yellow": 1.420023668400915,
+  #   "word": -2.745717732166203,
+  # }
   # print(run_wordlist(lock, weights))
 
   # with open(get_project_root() / "corpus.txt") as verif_file:
@@ -160,9 +156,9 @@ if __name__ == "__main__":
   # words = {}
   # for w in verif:
   #   words[w[0]] = int(w[1])
-  g = Game(weights)
+  # g = Game(weights)
   # g.sort()
   # g.eliminate_letters()
   # first_word = g.eliminate_letters_scores[-1][0]
   # del g
-  print(g.play_benchmark_best_weighted("tripe"))
+  # print(g.play_benchmark_best_weighted("tripe"))

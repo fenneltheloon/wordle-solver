@@ -1,10 +1,10 @@
 from game import Game
 
 weights = {
-  "black": 4.950368945938928,
-  "green": 2.1625415028158764,
-  "yellow": 1.420023668400915,
-  "word": -2.745717732166203,
+  "black": 5.22639492,
+  "green": 2.12096432,
+  "yellow": 1.40157567,
+  "word": -2.82829539,
 }
 game = Game(weights)
 game.print_intro()
