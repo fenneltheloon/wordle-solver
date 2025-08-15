@@ -137,7 +137,7 @@ def grad_desc():
 
 
 if __name__ == "__main__":
-  with open(get_project_root() / "all_wordle_answers_2025_08_13.txt") as input:
+  with open(get_project_root() / "all_wordle_answers_2025_08_15.txt") as input:
     input = input.readlines()
     wordlist = [i.strip().lower() for i in input]
   grad_desc()
