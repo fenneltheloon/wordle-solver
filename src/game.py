@@ -1,3 +1,5 @@
+import math
+
 from numpy import random
 import sys
 import re
@@ -30,7 +32,7 @@ class Game:
     self.first_word = first_word
 
   def print_intro(self):
-    self.sort()
+    self.sort_bins()
     print(f"{len(self.words)} words loaded.")
     print(f'Top word is "{self.word_scores[-1][0]}"')
     print("Welcome to wordle solver. What would you like to do?")
@@ -82,6 +84,31 @@ class Game:
       )
     self.word_scores = list(word_scores.items())
     self.word_scores.sort(key=lambda a: a[1])
+
+  def sort_bins(self):
+    # For word in corpus, create dict
+    # For each word in possible remaining words, score first word on how well it would do if second word is correct
+    # Use dict to track combo:[word] pairs
+    # Calculate error score for first word based off of how far away the distribution is from distributing evenly
+    # across all possible bins
+    word_scores = {}
+    for cand_guess in self.full_words:
+      cand_guess_dict = defaultdict(list)
+      for poss_word in self.words:
+        bin = self.compare(cand_guess, poss_word)
+        cand_guess_dict[bin].append(poss_word)
+      # Calculate score for distribution using Shannon Entropy
+      # en.wikipedia.org/wiki/Entropy_(information_theory)
+      # The higher the number, the better
+      word_scores[cand_guess] = -sum(
+        [
+          len(i) / len(self.words) * math.log2(len(i) / len(self.words))
+          for i in cand_guess_dict.values()
+        ]
+      )
+      self.all_word_scores = list(word_scores.items())
+      self.all_word_scores.sort(key=lambda a: a[1])
+      self.word_scores = [i for i in self.all_word_scores if i in self.words]
 
   def eliminate_letters(self):
     possible_word_scores = {a[0]: a[1] for a in self.word_scores}
@@ -195,7 +222,7 @@ class Game:
       #   Black is global letter + uniqs, yellow is positional, green is popularity
       # - How many words left in the word list
 
-      self.sort()
+      self.sort_bins()
       self.eliminate_letters()
       if len(ipt) > 2:
         just_words = [a[0] for a in self.word_scores]
@@ -210,6 +237,7 @@ class Game:
           print(possible)
         print()
       else:
+        best_words = self.all_word_scores[-len(self.words):]
         filter_list = []
         for item in self.eliminate_letters_scores.copy():
           if item[0] in self.words:
@@ -218,12 +246,13 @@ class Game:
         if delta > 0:
           for i in range(delta):
             filter_list.insert(0, "")
-        for possible, elim, filter in zip(
+        for possible, all_entropy, elim, filter_elim in zip(
           self.word_scores,
+          best_words,
           self.eliminate_letters_scores[-len(self.word_scores) :],
           filter_list,
         ):
-          print(possible, elim, filter)
+          print(possible, all_entropy, elim, filter_elim)
         print()
 
   # def guess_result(self, guess):
@@ -242,6 +271,21 @@ class Game:
   #       continue
   #     result += "b"
   #   return result
+
+  def compare(self, guess, word):
+    code = ""
+    word = [i for i in word]
+    for idx, letter in enumerate(guess):
+      if letter == word[idx]:
+        code += "g"
+        word[idx] = ""
+      elif letter in word:
+        code += "y"
+        word[word.index(letter)] = ""
+        continue
+      else:
+        code += "b"
+    return code
 
   def verif(self, yellow, word):
     word = [i for i in word]
