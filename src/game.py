@@ -11,7 +11,7 @@ MATCH_RE = r"[a-z]{5}\s+(?:b|y|g){5}\s*\S*"
 
 
 class Game:
-  def __init__(self, weights, first_word=None, words=None):
+  def __init__(self, first_word_scores=None, weights=None, first_word=None, words=None):
     if not words:
       with open(get_project_root() / "corpus.txt") as verif_file:
         verif = [a.strip().split() for a in verif_file.readlines()]
@@ -21,6 +21,10 @@ class Game:
         self.words[w[0]] = int(w[1])
     else:
       self.words = words
+    if first_word_scores:
+      self.first_word_scores = True
+      with open(first_word_scores, "r") as f:
+        self.word_scores = eval(f.read())
     self.full_words = self.words.copy()
     self.guessed_letters = set()
     self.colors = {"black": 5, "yellow": 0, "green": 0}
@@ -32,7 +36,8 @@ class Game:
     self.first_word = first_word
 
   def print_intro(self):
-    self.sort_bins()
+    if not self.first_word_scores:
+      self.sort_bins()
     print(f"{len(self.words)} words loaded.")
     print(f'Top word is "{self.word_scores[-1][0]}"')
     print("Welcome to wordle solver. What would you like to do?")
@@ -108,7 +113,7 @@ class Game:
       )
       self.all_word_scores = list(word_scores.items())
       self.all_word_scores.sort(key=lambda a: a[1])
-      self.word_scores = [i for i in self.all_word_scores if i in self.words]
+      self.word_scores = [i for i in self.all_word_scores if i[0] in self.words]
 
   def eliminate_letters(self):
     possible_word_scores = {a[0]: a[1] for a in self.word_scores}
@@ -223,7 +228,7 @@ class Game:
       # - How many words left in the word list
 
       self.sort_bins()
-      self.eliminate_letters()
+      # self.eliminate_letters()
       if len(ipt) > 2:
         just_words = [a[0] for a in self.word_scores]
         just_weights = [a[1] for a in self.word_scores]
@@ -237,22 +242,23 @@ class Game:
           print(possible)
         print()
       else:
-        best_words = self.all_word_scores[-len(self.words):]
-        filter_list = []
-        for item in self.eliminate_letters_scores.copy():
-          if item[0] in self.words:
-            filter_list.append(item)
-        delta = len(self.word_scores) - len(filter_list)
-        if delta > 0:
-          for i in range(delta):
-            filter_list.insert(0, "")
-        for possible, all_entropy, elim, filter_elim in zip(
+        # best_words = self.all_word_scores[-len(self.words) :]
+        # filter_list = []
+        # for item in self.eliminate_letters_scores.copy():
+        #   if item[0] in self.words:
+        #     filter_list.append(item)
+        # delta = len(self.word_scores) - len(filter_list)
+        # if delta > 0:
+        #   for i in range(delta):
+        #     filter_list.insert(0, "")
+        for possible, all_entropy in zip(
           self.word_scores,
-          best_words,
-          self.eliminate_letters_scores[-len(self.word_scores) :],
-          filter_list,
+          self.all_word_scores[-len(self.words) :],
+          # self.eliminate_letters_scores[-len(self.word_scores) :],
+          # filter_list,
         ):
-          print(possible, all_entropy, elim, filter_elim)
+          # print(possible, all_entropy, elim, filter_elim)
+          print(possible, all_entropy)
         print()
 
   # def guess_result(self, guess):
